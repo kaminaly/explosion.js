@@ -37,6 +37,7 @@ javascript:(
 								function init(){
 									if(isInitialized) return;
 									isInitialized = true;
+									window.scrollTo(0,0);
 									scene.add(stage);
 									scene.add(camera);
 									renderer.setSize(window.innerWidth, window.innerHeight);
