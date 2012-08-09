@@ -18,8 +18,7 @@ javascript:(
 
 							function b(){
 								var $=jQuery.noConflict(true)
-									, isInitialized = false
-									, camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 10000)
+									, camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000000)
 									, scene = new THREE.Scene()
 									, stage = new THREE.Object3D()
 									, renderer = new THREE.DOMRenderer()
@@ -29,19 +28,24 @@ javascript:(
 									, windowHeight = window.innerHeight
 									, windowHalfWidth = windowWidth >> 1
 									, windowHalfHeigth = windowHeight >> 1
+									, body = $('body').css('overflow','hidden')
+									, state = 0
 									, max = 70
-									, count = 0
-									, body = $('body').css('overflow','hidden');
-									body.children().fadeOut(1000, init);
+									, swf = 'https://shiftbrain.sakura.ne.jp/devjam/ssl/explosion.js/explosion.swf'
+									//githubに置いたファイルだと音がならなかった。mime系かな？'https://github.com/kaminaly/explosion.js/raw/master/explosion.swf'
+									, sound = $('<object id=\'externalsound\' classid=\'clsid:d27cdb6e-ae6d-11cf-96b8-444553540000\' codebase=\'http://fpdownload.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=9,0,0,0\' width=\'1\' height=\'1\'><param name=\'movie\' value=\''+swf+'\' /><param name=\'allowScriptAccess\' value=\'always\' /><embed name=\'externalsound\' src=\''+swf+'\' width=\'1\' height=\'1\' allowScriptAccess=\'always\' type=\'application/x-shockwave-flash\' pluginspage=\'http://www.macromedia.com/go/getflashplayer\' /></object>')
+									, count = body.children().length;
+									body.children().fadeOut(1500, init);
 
 								function init(){
-									if(isInitialized) return;
-									isInitialized = true;
+									count--;
+									if(count != 0) return;
 									window.scrollTo(0,0);
 									scene.add(stage);
 									scene.add(camera);
-									renderer.setSize(window.innerWidth, window.innerHeight);
-									camera.position.z = windowWidth * 10;
+									$(window).bind('resize', resize);
+									resize();
+									camera.position.z = windowWidth * 20;
 									document.body.appendChild(renderer.domElement);
 
 									body.find('img').each(toThreeJs);
@@ -49,11 +53,14 @@ javascript:(
 									if (count < max) body.find('span').each(toThreeJs);
 									if (count < max) body.find('p').each(toThreeJs);
 
-									/*
-									$('<object id='externalsound' classid='clsid:d27cdb6e-ae6d-11cf-96b8-444553540000' codebase='http://fpdownload.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=7,0,0,0' width='1' height='1'><param name='movie' value='https://raw.github.com/kaminaly/explosion.js/master/explosion.swf' /><param name='allowScriptAccess' value='always' /><embed name='externalsound' src='https://raw.github.com/kaminaly/explosion.js/master/explosion.swf' width='1' height='1' allowScriptAccess='always' type='application/x-shockwave-flash' pluginspage='http://www.macromedia.com/go/getflashplayer' /></object>').appendTo('body');
-									swf('externalsound').play();
-									*/
-									requestAnimationFrame(explosion);
+									sound.appendTo('body');
+
+									setTimeout(function(){
+										state = 1;
+									}, 500);
+
+									update();
+									requestAnimationFrame(update);
 								}
 								
 								function toThreeJs(){
@@ -67,37 +74,32 @@ javascript:(
 									stage.add(p);
 									count++;
 								}
-								
-								/*
-								function swf(str) {
-									if (navigator.appName.indexOf('Microsoft') != -1) {
-										return window[str];
-									}else {
-										return document[str];
-									}
-								}
-								*/
 
+								function update(){
+									if(state == 1) explosion();
+									else if(state == 2) waft();
+									renderer.render(scene, camera);
+									requestAnimationFrame(update);
+								}
+								
 								function explosion(){
 									stage.rotation.y += 0.005;
 									camera.position.z += (windowHalfWidth - camera.position.z) * 0.3;
 
-									renderer.render(scene, camera);
 									if(Math.abs(windowHalfWidth - camera.position.z) < 0.1){
 										body.css('cursor', 'move');
 										controls = new THREE.TrackballControls(camera);
-										requestAnimationFrame(waft);
-									}else{
-										requestAnimationFrame(explosion);
+										state = 2;
 									}
 								}
 
 								function waft(){
 									stage.rotation.y += 0.005;
 									controls.update(clock.getDelta());
-									
-									renderer.render(scene, camera);
-									requestAnimationFrame(waft);
+								}
+
+								function resize(){
+									renderer.setSize(window.innerWidth, window.innerHeight);
 								}
 							}
 						}
